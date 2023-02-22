@@ -9,6 +9,8 @@ import {keyBy} from 'lodash';
 import {open as showOpenDialog} from '@tauri-apps/api/dialog';
 import {basename} from "@tauri-apps/api/path";
 import {isNonNull} from "../shared/operators";
+import {APP_ID_HBCHANNEL} from "../shared/constants";
+import {HbchannelRemoveComponent} from "./hbchannel-remove/hbchannel-remove.component";
 
 @Component({
   selector: 'app-apps',
@@ -136,9 +138,20 @@ export class AppsComponent implements OnInit, OnDestroy {
       message: `Remove app \"${pkg.title}\"?`,
       positive: 'Remove',
       positiveStyle: 'danger',
-      negative: 'Cancel'
+      negative: 'Cancel',
+      autofocus: 'negative',
     });
     if (!await confirm.result) return;
+    if (pkg.id === APP_ID_HBCHANNEL) {
+      const doubleConfirm = MessageDialogComponent.open(this.modalService, {
+        message: HbchannelRemoveComponent,
+        positive: 'Yes, remove Homebrew Channel',
+        positiveStyle: 'danger',
+        negative: 'Cancel',
+        autofocus: 'negative',
+      });
+      if (!await doubleConfirm.result) return;
+    }
     const progress = ProgressDialogComponent.open(this.modalService);
     try {
       await this.appManager.remove(this.device, pkg.id);
@@ -177,7 +190,7 @@ export class AppsComponent implements OnInit, OnDestroy {
   }
 
   private get hasHbChannel(): boolean {
-    return isNonNull(this.instPackages?.['org.webosbrew.hbchannel']);
+    return isNonNull(this.instPackages?.[APP_ID_HBCHANNEL]);
   }
 
   private handleInstallationError(name: string, e: Error) {
